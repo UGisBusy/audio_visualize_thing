@@ -17,7 +17,7 @@ function keyPressed() {
 
 var FFT_CNT = 1024;
 var TOTAL_LENGTH = 500;
-var FULL_SIDE_CNT = 31;
+var FULL_SIDE_CNT = 41;
 var FFT_RATIO;
 var HALF_SIDE_CNT;
 var HEIGHT_FACTOR = 2;
