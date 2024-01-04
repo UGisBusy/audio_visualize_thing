@@ -2,25 +2,25 @@ var song;
 var fft;
 
 function preload() {
-  song = loadSound("Never gonna give you up.mp3");
-  // song = loadSound("yakuza-ost-baka-mitai-kiryu-full-version.mp3");
+  song = loadSound("LeaF - もぺもぺ (2019).flac");
 }
 
-function mouseClicked() {
-  if (song.isPlaying()) {
-    song.pause();
-    noLoop();
-  } else {
-    song.play();
-    loop();
+function keyPressed() {
+  if (keyCode === 32) {
+    if (song.isPlaying()) {
+      song.pause();
+    } else {
+      song.play();
+    }
   }
 }
 
-var FFT_CNT = 256;
+var FFT_CNT = 1024;
 var TOTAL_LENGTH = 500;
-var FULL_SIDE_CNT = 5;
+var FULL_SIDE_CNT = 31;
 var FFT_RATIO;
 var HALF_SIDE_CNT;
+var HEIGHT_FACTOR = 2;
 var LEN;
 
 function setup() {
@@ -28,30 +28,54 @@ function setup() {
   HALF_SIDE_CNT = floor(FULL_SIDE_CNT / 2);
   LEN = TOTAL_LENGTH / HALF_SIDE_CNT;
 
-  createCanvas(windowWidth, windowHeight, WEBGL);
   fft = new p5.FFT(0.8, FFT_CNT);
+  createCanvas(windowWidth, windowHeight, WEBGL);
   colorMode(HSB);
-  angleMode(RADIANS);
+  angleMode(DEGREES);
+  song.play();
 }
 
+var spectrum;
+var sf = 0;
 function draw() {
-  background(20);
+  background(5);
+  pointLight(0, 0, 5, -TOTAL_LENGTH, 0, -TOTAL_LENGTH);
+  pointLight(0, 0, 5, TOTAL_LENGTH, 0, -TOTAL_LENGTH);
+  pointLight(0, 0, 5, -TOTAL_LENGTH, 0, TOTAL_LENGTH);
+  pointLight(0, 0, 5, TOTAL_LENGTH, 0, TOTAL_LENGTH);
+  pointLight(0, 0, 100, 0, 0, 0);
+  shininess(2);
 
-  let spectrum = fft.analyze();
+  if (song.isPlaying()) {
+    spectrum = fft.analyze();
+    sf++;
+  } else {
+    console.log(sf);
+  }
 
-  fill(20);
+  let d, y, h, s, v;
+
   strokeWeight(3);
+  // rotateY(frameCount / 2);
   push();
-  translate(-LEN * HALF_SIDE_CNT, 0, -LEN * HALF_SIDE_CNT);
-  for (let i = -HALF_SIDE_CNT; i <= HALF_SIDE_CNT; i++) {
+  translate(-TOTAL_LENGTH, 0, -TOTAL_LENGTH);
+  for (let x = -TOTAL_LENGTH; x <= TOTAL_LENGTH; x += LEN) {
     push();
-    for (let ii = -HALF_SIDE_CNT; ii <= HALF_SIDE_CNT; ii++) {
-      let h = get_h(i, ii, spectrum) * 2;
+    for (let z = -TOTAL_LENGTH; z <= TOTAL_LENGTH; z += LEN) {
+      d = sqrt(x * x + z * z);
+      y = get_h_center(d) * HEIGHT_FACTOR;
+      h = (map(d, 0, TOTAL_LENGTH, 120, 360) + sf / 2) % 360;
+      // h = (map(y, 0, 510, 180, 360) + frameCount / 5) % 360;
+      // h = map(y, 0, 510, 200, 360);
+      s = 100;
+      v = y === 0 ? 10 : map(y, 100, 255 * HEIGHT_FACTOR, 50, 100);
+      specularMaterial(h, s, v);
       translate(0, 0, LEN);
-      stroke(map(h, 0, 510, 0, 360), 100, 100);
-      translate(0, -h / 2, 0);
-      box(LEN, h, LEN);
-      translate(0, h / 2, 0);
+      stroke(h, s, v);
+      translate(0, -y / 2, 0);
+      box(LEN, y + 10, LEN);
+      translate(0, y / 2, 0);
+      point(0, y, 0);
     }
     pop();
     translate(LEN, 0);
@@ -60,15 +84,13 @@ function draw() {
   orbitControl();
 }
 
-function get_h(i, ii, spectrum) {
-  let x = i * LEN;
-  let y = ii * LEN;
-  let d = sqrt(x * x + y * y);
+function get_h_center(d) {
   let idx = floor(d / FFT_RATIO);
-  // console.log(d, idx);
-  console.log(idx);
-  if (idx >= FFT_CNT) {
+  if (idx > FFT_CNT) {
     return 0;
+  }
+  if (idx === FFT_CNT) {
+    return spectrum[FFT_CNT - 1];
   }
   return spectrum[idx];
 }

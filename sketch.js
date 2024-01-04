@@ -4,7 +4,7 @@ var BIN_COUNT = 256;
 
 function preload() {
   // song = loadSound("Never gonna give you up.mp3");
-  song = loadSound("yakuza-ost-baka-mitai-kiryu-full-version.mp3");
+  song = loadSound("Teminite & Panda Eyes - Highscore.mp3");
 }
 
 function setup() {
