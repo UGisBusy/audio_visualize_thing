@@ -6,74 +6,6 @@ function preload() {
   // song = loadSound("yakuza-ost-baka-mitai-kiryu-full-version.mp3");
 }
 
-var BIN_COUNT = 256;
-
-function setup() {
-  createCanvas(windowWidth, windowHeight, WEBGL);
-  fft = new p5.FFT(0.8, BIN_COUNT);
-  colorMode(HSB);
-  angleMode(RADIANS);
-}
-
-var SIDE = 9;
-var GAP = 50;
-
-function draw() {
-  background(20);
-
-  fill(20);
-  strokeWeight(3);
-  var h_matrix = getHMatrix(fft.analyze());
-  push();
-  for (let i = 0; i < SIDE; i++) {
-    push();
-    for (let ii = 0; ii < SIDE; ii++) {
-      translate(0, 0, GAP);
-      push();
-      translate(0, -h_matrix[i][ii] / 2, 0);
-      stroke(map(h_matrix[i][ii], 0, 255, 0, 360), 100, 100);
-      box(GAP, h_matrix[i][ii], GAP);
-      pop();
-    }
-    pop();
-    translate(GAP, 0);
-  }
-  pop();
-
-  // var spectrum = fft.analyze();
-  // for (let i = 0; i < 20; i++) {
-  //   let a = map(i, 0, 20, 0, TWO_PI);
-  //   for (let ii = 0; ii < 5; ii++) {
-  //     let r = map(ii, 0, 5, 5, 200);
-  //     let x = r * cos(a);
-  //     let y = r * sin(a);
-  //     let h = map(spectrum[ii], 0, 255, 0, 200);
-  //     line(x, y, 0, x, y, h);
-  //   }
-  // }
-
-  orbitControl();
-}
-
-function getHMatrix(spectrum) {
-  let h_martix = [];
-  // spectrum = spectrum.reverse() + spectrum;
-
-  let j, jj;
-  for (let i = 0; i < SIDE; i++) {
-    h_martix[i] = [];
-    for (let ii = 0; ii < SIDE; ii++) {
-      j = abs(i - int(SIDE / 2) - 1);
-      jj = abs(ii - int(SIDE / 2) - 1);
-      let d = int(sqrt(j * j + jj * jj));
-      h_martix[i][ii] =
-        spectrum[map(d, 0, int((sqrt(2) * SIDE) / 2), 0, BIN_COUNT)];
-    }
-  }
-  // console.log(h_martix);
-  return h_martix;
-}
-
 function mouseClicked() {
   if (song.isPlaying()) {
     song.pause();
@@ -82,4 +14,61 @@ function mouseClicked() {
     song.play();
     loop();
   }
+}
+
+var FFT_CNT = 256;
+var TOTAL_LENGTH = 500;
+var FULL_SIDE_CNT = 5;
+var FFT_RATIO;
+var HALF_SIDE_CNT;
+var LEN;
+
+function setup() {
+  FFT_RATIO = TOTAL_LENGTH / FFT_CNT;
+  HALF_SIDE_CNT = floor(FULL_SIDE_CNT / 2);
+  LEN = TOTAL_LENGTH / HALF_SIDE_CNT;
+
+  createCanvas(windowWidth, windowHeight, WEBGL);
+  fft = new p5.FFT(0.8, FFT_CNT);
+  colorMode(HSB);
+  angleMode(RADIANS);
+}
+
+function draw() {
+  background(20);
+
+  let spectrum = fft.analyze();
+
+  fill(20);
+  strokeWeight(3);
+  push();
+  translate(-LEN * HALF_SIDE_CNT, 0, -LEN * HALF_SIDE_CNT);
+  for (let i = -HALF_SIDE_CNT; i <= HALF_SIDE_CNT; i++) {
+    push();
+    for (let ii = -HALF_SIDE_CNT; ii <= HALF_SIDE_CNT; ii++) {
+      let h = get_h(i, ii, spectrum) * 2;
+      translate(0, 0, LEN);
+      stroke(map(h, 0, 510, 0, 360), 100, 100);
+      translate(0, -h / 2, 0);
+      box(LEN, h, LEN);
+      translate(0, h / 2, 0);
+    }
+    pop();
+    translate(LEN, 0);
+  }
+  pop();
+  orbitControl();
+}
+
+function get_h(i, ii, spectrum) {
+  let x = i * LEN;
+  let y = ii * LEN;
+  let d = sqrt(x * x + y * y);
+  let idx = floor(d / FFT_RATIO);
+  // console.log(d, idx);
+  console.log(idx);
+  if (idx >= FFT_CNT) {
+    return 0;
+  }
+  return spectrum[idx];
 }
