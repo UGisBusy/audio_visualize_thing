@@ -32,19 +32,19 @@ function setup() {
   createCanvas(windowWidth, windowHeight, WEBGL);
   colorMode(HSB);
   angleMode(DEGREES);
-  song.play();
+  // song.play();
 }
 
-var spectrum;
+var spectrum = Array.apply(0, Array(FFT_CNT)).map(() => 0);
 var sf = 0;
 function draw() {
-  background(5);
-  pointLight(0, 0, 5, -TOTAL_LENGTH, 0, -TOTAL_LENGTH);
-  pointLight(0, 0, 5, TOTAL_LENGTH, 0, -TOTAL_LENGTH);
-  pointLight(0, 0, 5, -TOTAL_LENGTH, 0, TOTAL_LENGTH);
-  pointLight(0, 0, 5, TOTAL_LENGTH, 0, TOTAL_LENGTH);
-  pointLight(0, 0, 100, 0, 0, 0);
-  shininess(2);
+  background(0, 0, 80);
+  pointLight(0, 0, 50, -TOTAL_LENGTH * 2, 0, 0);
+  pointLight(0, 0, 50, TOTAL_LENGTH * 2, 0, 0);
+  pointLight(0, 0, 50, 0, 0, (TOTAL_LENGTH + LEN) * 2);
+  pointLight(0, 0, 50, 0, 0, (-TOTAL_LENGTH + LEN) * 2);
+  pointLight(0, 0, 50, 0, -TOTAL_LENGTH, 0);
+  shininess(1);
 
   if (song.isPlaying()) {
     spectrum = fft.analyze();
@@ -55,7 +55,7 @@ function draw() {
 
   let d, y, h, s, v;
 
-  strokeWeight(3);
+  strokeWeight(2);
   // rotateY(frameCount / 2);
   push();
   translate(-TOTAL_LENGTH, 0, -TOTAL_LENGTH);
@@ -65,13 +65,13 @@ function draw() {
       d = sqrt(x * x + z * z);
       y = get_h_center(d) * HEIGHT_FACTOR;
       h = (map(d, 0, TOTAL_LENGTH, 120, 360) + sf / 2) % 360;
-      // h = (map(y, 0, 510, 180, 360) + frameCount / 5) % 360;
+      // h = (map(y, 0, 255 * HEIGHT_FACTOR, 180, 360) + frameCount / 5) % 360;
       // h = map(y, 0, 510, 200, 360);
-      s = 100;
-      v = y === 0 ? 10 : map(y, 100, 255 * HEIGHT_FACTOR, 50, 100);
-      specularMaterial(h, s, v);
-      translate(0, 0, LEN);
+      s = y === 0 ? 30 : map(y, 0, 255 * HEIGHT_FACTOR, 40, 100);
+      v = y === 0 ? 20 : map(y, 0, 255 * HEIGHT_FACTOR, 50, 100);
       stroke(h, s, v);
+      translate(0, 0, LEN);
+      specularMaterial(h, s, v);
       translate(0, -y / 2, 0);
       box(LEN, y + 10, LEN);
       translate(0, y / 2, 0);
