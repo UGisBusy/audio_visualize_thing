@@ -4,8 +4,8 @@ var amp;
 
 function preload() {
   song = loadSound("LeaF - もぺもぺ (2019).flac");
-  song.addCue(47, switchFlag);
-  song.addCue(52.5, switchFlag);
+  song.addCue(46, switchFlag);
+  song.addCue(51.5, switchFlag);
 }
 
 function keyPressed() {
