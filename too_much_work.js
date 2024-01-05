@@ -1,8 +1,11 @@
 var song;
 var fft;
+var amp;
 
 function preload() {
   song = loadSound("LeaF - もぺもぺ (2019).flac");
+  song.addCue(47, switchFlag);
+  song.addCue(52.5, switchFlag);
 }
 
 function keyPressed() {
@@ -29,49 +32,50 @@ function setup() {
   LEN = TOTAL_LENGTH / HALF_SIDE_CNT;
 
   fft = new p5.FFT(0.8, FFT_CNT);
+  amp = new p5.Amplitude();
   createCanvas(windowWidth, windowHeight, WEBGL);
   colorMode(HSB);
   angleMode(DEGREES);
   // song.play();
 }
 
-var spectrum = Array.apply(0, Array(FFT_CNT));
+function switchFlag() {
+  flag_light = !flag_light;
+}
+
+var spectrum = Array.apply(0, Array(FFT_CNT)).map(() => 0);
 var sf = 0;
 var flag_light = true;
-var flag_dark = false;
-var a = [2630, 2887];
 function draw() {
   if (song.isPlaying()) {
     spectrum = fft.analyze();
-    if (a[0] <= sf && sf <= a[1]) {
-      flag_light = false;
-      flag_dark = true;
-    } else {
-      flag_light = true;
-      flag_dark = false;
-    }
     sf++;
   } else {
-    console.log(sf);
+    console.log(song.currentTime());
   }
 
-  if (flag_light && !flag_dark) {
+  if (flag_light) {
     background(0, 0, 90);
-    pointLight(0, 0, 50, -TOTAL_LENGTH, -LEN / 2, -TOTAL_LENGTH + LEN);
-    pointLight(0, 0, 50, TOTAL_LENGTH, -LEN / 2, -TOTAL_LENGTH + LEN);
-    pointLight(0, 0, 50, -TOTAL_LENGTH, -LEN / 2, TOTAL_LENGTH + LEN);
-    pointLight(0, 0, 50, TOTAL_LENGTH, -LEN / 2, TOTAL_LENGTH + LEN);
-    pointLight(0, 0, 80, 0, -TOTAL_LENGTH, 0);
+    pointLight(0, 0, 50, -TOTAL_LENGTH * 2, 0, LEN);
+    pointLight(0, 0, 50, TOTAL_LENGTH * 2, 0, LEN);
+    pointLight(0, 0, 50, 0, 0, (TOTAL_LENGTH + LEN) * 2);
+    pointLight(0, 0, 50, 0, 0, (-TOTAL_LENGTH + LEN) * 2);
+    pointLight(0, 0, 40, 0, -TOTAL_LENGTH * 2, 0);
     shininess(1);
   }
-  if (!flag_light && flag_dark) {
-    background(5);
-    // pointLight(0, 0, 0, -TOTAL_LENGTH, 0, -TOTAL_LENGTH);
-    // pointLight(0, 100, 50, TOTAL_LENGTH, 0, TOTAL_LENGTH);
-    pointLight(0, 100, 50, TOTAL_LENGTH, 0, TOTAL_LENGTH + LEN);
-    pointLight(0, 100, 80, 0, 0, 0);
-
-    // pointLight(0, 100, 100, TOTAL_LENGTH, 0, TOTAL_LENGTH + LEN);
+  if (!flag_light) {
+    background(0, 0, map(amp.getLevel(), 0, 1, 0, 10));
+    pointLight(
+      5,
+      100,
+      map(amp.getLevel(), 0, 1, 20, 80),
+      TOTAL_LENGTH,
+      0,
+      TOTAL_LENGTH + LEN
+    );
+    pointLight(0, 100, 5, -TOTAL_LENGTH, 10, -TOTAL_LENGTH + LEN);
+    pointLight(0, 100, 10, 0, -TOTAL_LENGTH * 2, LEN);
+    shininess(0);
   }
 
   let d, y, h, s, v;
@@ -83,33 +87,34 @@ function draw() {
   for (let x = -TOTAL_LENGTH; x <= TOTAL_LENGTH; x += LEN) {
     push();
     for (let z = -TOTAL_LENGTH; z <= TOTAL_LENGTH; z += LEN) {
-      if (flag_light && !flag_dark) {
+      if (flag_light) {
         d = sqrt(x * x + z * z);
         y = get_h_center(d) * HEIGHT_FACTOR;
         h = (map(d, 0, TOTAL_LENGTH, 120, 360) + sf / 2) % 360;
-        // h = (map(y, 0, 510, 180, 360) + frameCount / 5) % 360;
+        // h = (map(y, 0, 255 * HEIGHT_FACTOR, 180, 360) + frameCount / 5) % 360;
         // h = map(y, 0, 510, 200, 360);
-        s = y === 0 ? 20 : 100;
-        v = y === 0 ? 20 : map(y, 90, 255 * HEIGHT_FACTOR, 50, 100);
-        specularMaterial(h, s, v);
-        translate(0, 0, LEN);
+        s = y === 0 ? 30 : map(y, 0, 255 * HEIGHT_FACTOR, 40, 100);
+        v = y === 0 ? 20 : map(y, 0, 255 * HEIGHT_FACTOR, 50, 100);
         stroke(h, s, v);
+        translate(0, 0, LEN);
+        specularMaterial(h, s, v);
         translate(0, -y / 2, 0);
         box(LEN, y + 10, LEN);
         translate(0, y / 2, 0);
-        point(0, y, 0);
+        // point(0, y, 0);
       }
-      if (!flag_light && flag_dark) {
+      if (!flag_light) {
         d = sqrt(x * x + z * z);
         y = get_h_center(d) * HEIGHT_FACTOR;
         h = 0;
         // h = (map(y, 0, 510, 180, 360) + frameCount / 5) % 360;
         // h = map(y, 0, 510, 200, 360);
-        s = map(y, 90, 255 * HEIGHT_FACTOR, 0, 100);
-        v = map(h, 90, 255 * HEIGHT_FACTOR, 0, 100);
-        specularMaterial(h, s, v);
+        s = map(y, 0, 255 * HEIGHT_FACTOR, 0, 100);
+        v = y === 0 ? 0 : map(y, 0, 255 * HEIGHT_FACTOR, 10, 100);
+        stroke(0, 100, map(y, 0, 255 * HEIGHT_FACTOR, 0, 80));
+        specularMaterial(20, s, v);
         translate(0, 0, LEN);
-        noStroke();
+        // noStroke();
         translate(0, -y / 2, 0);
         box(LEN, y + 10, LEN);
         translate(0, y / 2, 0);
